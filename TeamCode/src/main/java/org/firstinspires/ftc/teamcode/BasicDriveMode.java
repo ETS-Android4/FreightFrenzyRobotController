@@ -27,7 +27,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.firstinspires.ftc.robotcontroller.external.samples;
+package org.firstinspires.ftc.teamcode;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -36,9 +36,9 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
-@TeleOp(name="Basic Duckwheel", group="Iterative Opmode")
+@TeleOp(name="Basic Drive", group="Iterative Opmode")
 @Config
-public class BasicWheelMode extends OpMode {
+public class BasicDriveMode extends OpMode {
 
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
@@ -46,12 +46,10 @@ public class BasicWheelMode extends OpMode {
     private DcMotor lbDrive = null;
     private DcMotor rfDrive = null;
     private DcMotor lfDrive = null;
-    private DcMotor wheelMotor = null;
 
     // FTC Dashboard Editable Variables
     public static double DRIVE_SPEED_MULTIPLIER = 1.0;
     public static double TURN_SPEED_MULTIPLIER = 0.5;
-    public static double WHEEL_SPEED = 1.0;
 
     /*
      * Code to run ONCE when the driver hits INIT
@@ -67,7 +65,6 @@ public class BasicWheelMode extends OpMode {
         lbDrive = hardwareMap.get(DcMotor.class, "left_back_drive");
         rfDrive = hardwareMap.get(DcMotor.class, "right_front_drive");
         lfDrive = hardwareMap.get(DcMotor.class, "left_front_drive");
-        wheelMotor = hardwareMap.get(DcMotor.class, "wheel_motor");
 
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
@@ -75,14 +72,12 @@ public class BasicWheelMode extends OpMode {
         lbDrive.setDirection(DcMotor.Direction.FORWARD);
         rfDrive.setDirection(DcMotor.Direction.REVERSE);
         lfDrive.setDirection(DcMotor.Direction.FORWARD);
-        wheelMotor.setDirection(DcMotor.Direction.FORWARD);
 
         // Enable breaking on zero power
         rbDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lbDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rfDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lfDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        wheelMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
@@ -121,15 +116,6 @@ public class BasicWheelMode extends OpMode {
         lbDrive.setPower(Range.clip(lbPower, -1, 1));
         rfDrive.setPower(Range.clip(rfPower, -1, 1));
         lfDrive.setPower(Range.clip(lfPower, -1, 1));
-
-        // Duck wheel motor
-        if (gamepad1.dpad_left) {
-            wheelMotor.setPower(-WHEEL_SPEED);
-        } else if (gamepad1.dpad_right) {
-            wheelMotor.setPower(WHEEL_SPEED);
-        } else {
-            wheelMotor.setPower(0);
-        }
 
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime.toString());
