@@ -104,13 +104,16 @@ public class BasicDriveMode extends OpMode {
      */
     @Override
     public void loop() {
+        double drive = -gamepad1.left_stick_y;
+        double strafe = -gamepad1.left_stick_x;
+        double rotate = -gamepad1.right_stick_x;
         double r = Math.hypot(gamepad1.left_stick_x, gamepad1.left_stick_y) * DRIVE_SPEED_MULTIPLIER;
         double robotAngle = Math.atan2(gamepad1.left_stick_y, gamepad1.left_stick_x) - Math.PI / 4;
         double rightX = gamepad1.right_stick_x * -1 * TURN_SPEED_MULTIPLIER;
-        final double rbPower = r * Math.cos(robotAngle) - rightX;
-        final double lbPower = r * Math.sin(robotAngle) + rightX;
-        final double rfPower = r * Math.sin(robotAngle) - rightX;
-        final double lfPower = r * Math.cos(robotAngle) + rightX;
+        final double rbPower = DRIVE_SPEED_MULTIPLIER * (drive - rotate + strafe); //r * Math.cos(robotAngle) - rightX;
+        final double lbPower = DRIVE_SPEED_MULTIPLIER * (drive + rotate + strafe); //r * Math.sin(robotAngle) + rightX;
+        final double rfPower = DRIVE_SPEED_MULTIPLIER * (-drive + rotate + strafe); //r * Math.sin(robotAngle) - rightX;
+        final double lfPower = DRIVE_SPEED_MULTIPLIER * (-drive - rotate + strafe); //r * Math.cos(robotAngle) + rightX;
 
         rbDrive.setPower(Range.clip(rbPower, -1, 1));
         lbDrive.setPower(Range.clip(lbPower, -1, 1));

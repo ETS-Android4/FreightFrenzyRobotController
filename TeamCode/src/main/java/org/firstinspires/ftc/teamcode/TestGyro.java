@@ -30,15 +30,18 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
-@TeleOp(name="Basic Duckwheel", group="Iterative Opmode")
+@Autonomous(name="Test Gyro", group="Iterative Opmode")
 @Config
-public class BasicWheelMode extends OpMode {
+public class TestGyro extends LinearOpMode {
 
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
@@ -46,19 +49,22 @@ public class BasicWheelMode extends OpMode {
     private DcMotor lbDrive = null;
     private DcMotor rfDrive = null;
     private DcMotor lfDrive = null;
-    private DcMotor wheelMotor = null;
+    private ModernRoboticsI2cGyro gyro;
 
-    // FTC Dashboard Editable Variables
-    public static double DRIVE_SPEED_MULTIPLIER = 1.0;
-    public static double TURN_SPEED_MULTIPLIER = 0.5;
-    public static double WHEEL_SPEED = 1.0;
+    public static double TICKS_PER_REV = 537.6;
+    public static double DRIVE_GEAR_REDUCTION = 0.5;
+    public static double WHEEL_DIAMETER = 4.0;
+    public static double COUNTS_PER_INCH = (TICKS_PER_REV * DRIVE_GEAR_REDUCTION) / (WHEEL_DIAMETER * 3.1415);
 
-    /*
-     * Code to run ONCE when the driver hits INIT
-     */
+    public static double DRIVE_SPEED = 0.8;
+    public static double TURN_SPEED = 0.5;
+
+    static final double HEADING_THRESHOLD = 1;
+    static final double P_TURN_COEFF = 0.1; // Larger is more responsive, but also less stable
+    static final double P_DRIVE_COEFF = 0.15; // Larger is more responsive, but also less stable
+
     @Override
-    public void init() {
-        telemetry.addData("Status", "Initializing");
+    public void runOpMode() throws InterruptedException {
 
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
@@ -67,84 +73,57 @@ public class BasicWheelMode extends OpMode {
         lbDrive = hardwareMap.get(DcMotor.class, "left_back_drive");
         rfDrive = hardwareMap.get(DcMotor.class, "right_front_drive");
         lfDrive = hardwareMap.get(DcMotor.class, "left_front_drive");
-        wheelMotor = hardwareMap.get(DcMotor.class, "wheel_motor");
+        gyro = (ModernRoboticsI2cGyro)hardwareMap.gyroSensor.get("gyro");
 
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
-        rbDrive.setDirection(DcMotor.Direction.REVERSE);
+        rbDrive.setDirection(DcMotor.Direction.FORWARD);
         lbDrive.setDirection(DcMotor.Direction.FORWARD);
         rfDrive.setDirection(DcMotor.Direction.REVERSE);
-        lfDrive.setDirection(DcMotor.Direction.FORWARD);
-        wheelMotor.setDirection(DcMotor.Direction.FORWARD);
+        lfDrive.setDirection(DcMotor.Direction.REVERSE);
+
+        rbDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        lbDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rfDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        lfDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // Enable breaking on zero power
         rbDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lbDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rfDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lfDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        wheelMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        // Tell the driver that initialization is complete.
-        telemetry.addData("Status", "Initialized");
-    }
+        gyro.calibrate();
 
-    /*
-     * Code to run REPEATEDLY after the driver hits INIT, but before they hit PLAY
-     */
-    @Override
-    public void init_loop() {
-    }
-
-    /*
-     * Code to run ONCE when the driver hits PLAY
-     */
-    @Override
-    public void start() {
-//        telemetry.addData("Status", "Running");
-        runtime.reset();
-    }
-
-    /*
-     * Code to run REPEATEDLY after the driver hits PLAY but before they hit STOP
-     */
-    @Override
-    public void loop() {
-        double drive = -gamepad1.left_stick_y;
-        double strafe = -gamepad1.left_stick_x;
-        double rotate = -gamepad1.right_stick_x;
-        double r = Math.hypot(gamepad1.left_stick_x, gamepad1.left_stick_y) * DRIVE_SPEED_MULTIPLIER;
-        double robotAngle = Math.atan2(gamepad1.left_stick_y, gamepad1.left_stick_x) - Math.PI / 4;
-        double rightX = gamepad1.right_stick_x * -1 * TURN_SPEED_MULTIPLIER;
-        final double rbPower = DRIVE_SPEED_MULTIPLIER * (drive - rotate + strafe); //r * Math.cos(robotAngle) - rightX;
-        final double lbPower = DRIVE_SPEED_MULTIPLIER * (drive + rotate + strafe); //r * Math.sin(robotAngle) + rightX;
-        final double rfPower = DRIVE_SPEED_MULTIPLIER * (-drive + rotate + strafe); //r * Math.sin(robotAngle) - rightX;
-        final double lfPower = DRIVE_SPEED_MULTIPLIER * (-drive - rotate + strafe); //r * Math.cos(robotAngle) + rightX;
-
-        rbDrive.setPower(Range.clip(rbPower, -1, 1));
-        lbDrive.setPower(Range.clip(lbPower, -1, 1));
-        rfDrive.setPower(Range.clip(rfPower, -1, 1));
-        lfDrive.setPower(Range.clip(lfPower, -1, 1));
-
-        // Duck wheel motor
-        if (gamepad1.dpad_left) {
-            wheelMotor.setPower(-WHEEL_SPEED);
-        } else if (gamepad1.dpad_right) {
-            wheelMotor.setPower(WHEEL_SPEED);
-        } else {
-            wheelMotor.setPower(0);
+        while (opModeIsActive() && gyro.isCalibrating()) {
+            sleep(50);
+            idle();
         }
 
-        // Show the elapsed game time and wheel power.
-        telemetry.addData("Status", "Run Time: " + runtime.toString());
-//        telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftPower, rightPower);
+        telemetry.addData("Status", "Ready");
+        telemetry.update();
+
+        while (!isStarted()) {
+            telemetry.addData(">", "Robot Heading = %d", gyro.getIntegratedZValue());
+            telemetry.update();
+        }
+
+        gyro.resetZAxisIntegrator();
+
     }
 
-    /*
-     * Code to run ONCE after the driver hits STOP
-     */
-    @Override
-    public void stop() {
-        telemetry.addData("Status", "Stopped");
+
+
+
+    double getError(double target) {
+        double actual = target - gyro.getIntegratedZValue();
+        while (actual > 180) actual -= 360;
+        while (actual <= -180) actual += 360;
+        return actual;
+    }
+
+    double getPowerCorrection(double error, double PCoeff) {
+        return Range.clip(error * PCoeff, -1, 1);
     }
 
 }

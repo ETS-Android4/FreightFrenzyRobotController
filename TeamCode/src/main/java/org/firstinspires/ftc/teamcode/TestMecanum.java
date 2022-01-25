@@ -33,12 +33,14 @@ import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
-@TeleOp(name="Basic Duckwheel", group="Iterative Opmode")
+@TeleOp(name="Test Mecanum", group="Iterative Opmode")
 @Config
-public class BasicWheelMode extends OpMode {
+public class TestMecanum extends OpMode {
 
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
@@ -46,12 +48,10 @@ public class BasicWheelMode extends OpMode {
     private DcMotor lbDrive = null;
     private DcMotor rfDrive = null;
     private DcMotor lfDrive = null;
-    private DcMotor wheelMotor = null;
 
     // FTC Dashboard Editable Variables
     public static double DRIVE_SPEED_MULTIPLIER = 1.0;
-    public static double TURN_SPEED_MULTIPLIER = 0.5;
-    public static double WHEEL_SPEED = 1.0;
+    public static double FRONT_SPEED_MULTIPLIER = 0.75;
 
     /*
      * Code to run ONCE when the driver hits INIT
@@ -67,22 +67,19 @@ public class BasicWheelMode extends OpMode {
         lbDrive = hardwareMap.get(DcMotor.class, "left_back_drive");
         rfDrive = hardwareMap.get(DcMotor.class, "right_front_drive");
         lfDrive = hardwareMap.get(DcMotor.class, "left_front_drive");
-        wheelMotor = hardwareMap.get(DcMotor.class, "wheel_motor");
 
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
-        rbDrive.setDirection(DcMotor.Direction.REVERSE);
+        rbDrive.setDirection(DcMotor.Direction.FORWARD);
         lbDrive.setDirection(DcMotor.Direction.FORWARD);
         rfDrive.setDirection(DcMotor.Direction.REVERSE);
-        lfDrive.setDirection(DcMotor.Direction.FORWARD);
-        wheelMotor.setDirection(DcMotor.Direction.FORWARD);
+        lfDrive.setDirection(DcMotor.Direction.REVERSE);
 
         // Enable breaking on zero power
         rbDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lbDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rfDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lfDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        wheelMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
@@ -109,34 +106,30 @@ public class BasicWheelMode extends OpMode {
      */
     @Override
     public void loop() {
-        double drive = -gamepad1.left_stick_y;
-        double strafe = -gamepad1.left_stick_x;
-        double rotate = -gamepad1.right_stick_x;
-        double r = Math.hypot(gamepad1.left_stick_x, gamepad1.left_stick_y) * DRIVE_SPEED_MULTIPLIER;
-        double robotAngle = Math.atan2(gamepad1.left_stick_y, gamepad1.left_stick_x) - Math.PI / 4;
-        double rightX = gamepad1.right_stick_x * -1 * TURN_SPEED_MULTIPLIER;
-        final double rbPower = DRIVE_SPEED_MULTIPLIER * (drive - rotate + strafe); //r * Math.cos(robotAngle) - rightX;
-        final double lbPower = DRIVE_SPEED_MULTIPLIER * (drive + rotate + strafe); //r * Math.sin(robotAngle) + rightX;
-        final double rfPower = DRIVE_SPEED_MULTIPLIER * (-drive + rotate + strafe); //r * Math.sin(robotAngle) - rightX;
-        final double lfPower = DRIVE_SPEED_MULTIPLIER * (-drive - rotate + strafe); //r * Math.cos(robotAngle) + rightX;
-
-        rbDrive.setPower(Range.clip(rbPower, -1, 1));
-        lbDrive.setPower(Range.clip(lbPower, -1, 1));
-        rfDrive.setPower(Range.clip(rfPower, -1, 1));
-        lfDrive.setPower(Range.clip(lfPower, -1, 1));
-
-        // Duck wheel motor
-        if (gamepad1.dpad_left) {
-            wheelMotor.setPower(-WHEEL_SPEED);
+        if (gamepad1.dpad_up) {
+            rbDrive.setPower(DRIVE_SPEED_MULTIPLIER);
+            lbDrive.setPower(DRIVE_SPEED_MULTIPLIER * FRONT_SPEED_MULTIPLIER);
+            rfDrive.setPower(DRIVE_SPEED_MULTIPLIER);
+            lfDrive.setPower(DRIVE_SPEED_MULTIPLIER * FRONT_SPEED_MULTIPLIER);
+        } else if (gamepad1.dpad_down) {
+            rbDrive.setPower(-DRIVE_SPEED_MULTIPLIER);
+            lbDrive.setPower(-DRIVE_SPEED_MULTIPLIER * FRONT_SPEED_MULTIPLIER);
+            rfDrive.setPower(-DRIVE_SPEED_MULTIPLIER);
+            lfDrive.setPower(-DRIVE_SPEED_MULTIPLIER * FRONT_SPEED_MULTIPLIER);
         } else if (gamepad1.dpad_right) {
-            wheelMotor.setPower(WHEEL_SPEED);
-        } else {
-            wheelMotor.setPower(0);
+            rbDrive.setPower(DRIVE_SPEED_MULTIPLIER);
+            lbDrive.setPower(-DRIVE_SPEED_MULTIPLIER * FRONT_SPEED_MULTIPLIER);
+            rfDrive.setPower(-DRIVE_SPEED_MULTIPLIER);
+            lfDrive.setPower(DRIVE_SPEED_MULTIPLIER * FRONT_SPEED_MULTIPLIER);
+        } else if (gamepad1.dpad_left) {
+            rbDrive.setPower(-DRIVE_SPEED_MULTIPLIER);
+            lbDrive.setPower(DRIVE_SPEED_MULTIPLIER * FRONT_SPEED_MULTIPLIER);
+            rfDrive.setPower(DRIVE_SPEED_MULTIPLIER);
+            lfDrive.setPower(-DRIVE_SPEED_MULTIPLIER * FRONT_SPEED_MULTIPLIER);
         }
 
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime.toString());
-//        telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftPower, rightPower);
     }
 
     /*
