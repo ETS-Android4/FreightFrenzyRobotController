@@ -3,13 +3,16 @@ package org.firstinspires.ftc.teamcode;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.teamcode.util.misc.vision.VuforiaLocalizer;
+
 @Config
 public class Robot {
+
+    // TODO: Incorporate SimpleMecanumDrive in order to have a unified hardware class
 
     private HardwareMap hardwareMap;
 
@@ -18,7 +21,7 @@ public class Robot {
     public DcMotor armMotorLeft, armMotorRight;
     public Servo armServoLeft, armServoRight;
 
-    VuforiaLocalizer fieldLocalizer;
+//    VuforiaLocalizer fieldLocalizer;
 
     // Servo Positions
     public static double[] CLAW_BACK = {0.05, 0};
@@ -89,10 +92,10 @@ public class Robot {
         armMotorRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
-    public void initializeVuforiaLocalizer() {
-        fieldLocalizer = new VuforiaLocalizer(hardwareMap);
-        fieldLocalizer.initialize();
-    }
+//    public void initializeVuforiaLocalizer() {
+//        fieldLocalizer = new VuforiaLocalizer(hardwareMap);
+//        fieldLocalizer.initialize();
+//    }
 
     public void drive(double drive, double strafe, double rotate, double speed) {
         final double rbPower = speed * (drive - rotate + strafe);
@@ -117,10 +120,6 @@ public class Robot {
         duckWheel.setPower(speed);
         sleep(time);
         duckWheel.setPower(0);
-    }
-
-    public void spinDuckWheel(double speed) {
-        duckWheel.setPower(speed);
     }
 
     public void setClawPosition(double[] positions) {
