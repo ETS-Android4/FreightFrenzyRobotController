@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.util.misc.vision;
+package org.firstinspires.ftc.teamcode.util.vision;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
@@ -29,11 +29,11 @@ public class OpenCVElementTracker {
     OpenCvCamera camera;
     TeamElementPipeline pipeline;
 
-    public OpenCVElementTracker(HardwareMap hw) {
+    public OpenCVElementTracker(HardwareMap hw, double xOffset) {
         int cameraMonitorViewId = hw.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hw.appContext.getPackageName());
         camera = OpenCvCameraFactory.getInstance().createWebcam(hw.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
         camera.openCameraDevice();
-        pipeline = new TeamElementPipeline();
+        pipeline = new TeamElementPipeline(xOffset);
         camera.setPipeline(pipeline);
         stream();
     }
@@ -61,27 +61,37 @@ class TeamElementPipeline extends OpenCvPipeline {
 
     // https://www.youtube.com/watch?v=JO7dqzJi8lw
 
-    public static double BLUE_THRESHOLD = 0.25;
+    public static double COLOR_THRESHOLD = 70;
+    public static int COLOR_BOUND_LOW = 5;
+    public static int COLOR_BOUND_HIGH = 20;
 
-    public static double lroix1 = 20;
-    public static double lroiy1 = 120;
-    public static double lroix2 = 140;
-    public static double lroiy2 = 200;
-    public static double rroix1 = 180;
-    public static double rroiy1 = 120;
-    public static double rroix2 = 300;
-    public static double rroiy2 = 200;
+    double lroix1 = 70;
+    double lroiy1 = 120;
+    double lroix2 = 130;
+    double lroiy2 = 200;
+    double rroix1 = 190;
+    double rroiy1 = 120;
+    double rroix2 = 250;
+    double rroiy2 = 200;
 
     Mat mat = new Mat();
-    static Rect LEFT_ROI = new Rect(
-            new Point(lroix1, lroiy1),
-            new Point(lroix2, lroiy2)
-    );
+    Rect LEFT_ROI;
+    Rect RIGHT_ROI;
 
-    static Rect RIGHT_ROI =  new Rect(
-        new Point(rroix1, rroiy1),
-        new Point(rroix2, rroiy2)
-    );
+    public TeamElementPipeline(double xOffset) {
+        lroix1 += xOffset;
+        lroix2 += xOffset;
+        rroix1 += xOffset;
+        rroix2 += xOffset;
+        LEFT_ROI = new Rect(
+                new Point(lroix1, lroiy1),
+                new Point(lroix2, lroiy2)
+        );
+        RIGHT_ROI = new Rect(
+                new Point(rroix1, rroiy1),
+                new Point(rroix2, rroiy2)
+        );
+    }
 
     OpenCVElementTracker.LOCATION currentLoc = OpenCVElementTracker.LOCATION.UNKNOWN;
 
@@ -92,8 +102,8 @@ class TeamElementPipeline extends OpenCvPipeline {
 
         // Convert to grayscale image of blue values
         Imgproc.cvtColor(input, mat, Imgproc.COLOR_RGB2HSV);
-        Scalar lowBlue = new Scalar(20, 50, 70);
-        Scalar highBlue = new Scalar(40, 255, 255);
+        Scalar lowBlue = new Scalar(COLOR_BOUND_LOW, 50, 70);
+        Scalar highBlue = new Scalar(COLOR_BOUND_HIGH, 255, 255);
         Core.inRange(mat, lowBlue, highBlue, mat);
 
         // Get the average amount of blue in each region of interest
@@ -105,9 +115,9 @@ class TeamElementPipeline extends OpenCvPipeline {
         right.release();
 
         // Find the region with the most blue
-        if ((leftValue > BLUE_THRESHOLD) && (leftValue > rightValue)) {
+        if ((leftValue > COLOR_THRESHOLD) && (leftValue > rightValue)) {
             currentLoc = OpenCVElementTracker.LOCATION.LEFT;
-        } else if ((rightValue > BLUE_THRESHOLD) && (rightValue > leftValue)) {
+        } else if ((rightValue > COLOR_THRESHOLD) && (rightValue > leftValue)) {
             currentLoc = OpenCVElementTracker.LOCATION.RIGHT;
         } else {
             currentLoc = OpenCVElementTracker.LOCATION.UNKNOWN;

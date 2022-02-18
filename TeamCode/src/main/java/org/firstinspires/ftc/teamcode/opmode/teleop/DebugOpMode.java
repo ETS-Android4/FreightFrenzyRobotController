@@ -39,7 +39,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.Robot;
-import org.firstinspires.ftc.teamcode.util.misc.vision.OpenCVElementTracker;
+import org.firstinspires.ftc.teamcode.util.vision.OpenCVElementTracker;
 
 @TeleOp(name="Debug Util", group="Iterative Opmode")
 @Config
@@ -50,6 +50,7 @@ public class DebugOpMode extends OpMode {
     private Robot robot;
 
 //    private VuforiaLocalizer vuforiaLocalizer;
+    public static double ELEMENT_TRACKER_X_OFFSET = 0;
     private OpenCVElementTracker elementTracker;
 
     // FTC Dashboard Editable Variables
@@ -74,7 +75,7 @@ public class DebugOpMode extends OpMode {
 
 //        vuforiaLocalizer = new VuforiaLocalizer(hardwareMap);
 //        vuforiaLocalizer.initialize();
-        elementTracker = new OpenCVElementTracker(hardwareMap);
+        elementTracker = new OpenCVElementTracker(hardwareMap, ELEMENT_TRACKER_X_OFFSET);
 
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");

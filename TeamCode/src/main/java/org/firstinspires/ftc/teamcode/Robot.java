@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.util.misc.vision.VuforiaLocalizer;
@@ -15,6 +16,8 @@ public class Robot {
     // TODO: Incorporate SimpleMecanumDrive in order to have a unified hardware class
 
     private HardwareMap hardwareMap;
+    private ElapsedTime armTimer;
+    public static int ARM_MOVE_MAX_TIME = 3000;
 
     public DcMotorEx rbDrive, lbDrive, rfDrive, lfDrive;
     public DcMotor duckWheel;
@@ -36,6 +39,7 @@ public class Robot {
 
     public Robot(HardwareMap hw) {
         hardwareMap = hw;
+        armTimer = new ElapsedTime();
 
         rbDrive  = hardwareMap.get(DcMotorEx.class, "right_back_drive");
         lbDrive = hardwareMap.get(DcMotorEx.class, "left_back_drive");
@@ -135,6 +139,7 @@ public class Robot {
     }
 
     public void setArmPosition(int[] position, double speed) {
+        armTimer.reset();
         armMotorLeft.setPower(0);
         armMotorRight.setPower(0);
         armMotorLeft.setTargetPosition(position[0]);
@@ -153,7 +158,9 @@ public class Robot {
     }
 
     public boolean armIsBusy() {
-        return (armMotorLeft.isBusy() || armMotorLeft.isBusy());
+        boolean encoderStatus = (armMotorLeft.isBusy() || armMotorLeft.isBusy());
+        boolean timerStatus = (armTimer.milliseconds() < ARM_MOVE_MAX_TIME);
+        return (encoderStatus && timerStatus);
     }
 
     public final void sleep(long milliseconds) {

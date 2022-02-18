@@ -8,19 +8,19 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.util.vision.OpenCVElementTracker;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.util.drive.SampleMecanumDrive;
+import org.firstinspires.ftc.teamcode.util.vision.OpenCVElementTracker;
 
-// TODO: Convert this and DuckWheelAutoRed to a single class that gets subclassed to change positions/rotations
+// TODO: Convert this and WharehouseAutoBlue to a single class that gets subclassed to change positions/rotations
 
 @Config
-@Autonomous(name = "Duck Wheel Blue",group = "drive")
-public class DuckWheelAutoBlue extends LinearOpMode {
+@Autonomous(name = "Warehouse Red",group = "drive")
+public class WarehouseAutoRed extends LinearOpMode {
 
+    public static double SPRINT_SPEED = 0.90;
+    public static int SPRINT_TIME = 1000;
     public static double ARM_SPEED = 0.45;
-    public static double DUCKWHEEL_ROTATION_OFFSET = 5;
-    public static double DUCKWHEEL_SPIN_SPEED = 0.35;
     public static int CLAW_MOVE_MAX_TIME = 1500;
 
     ElapsedTime runtime = new ElapsedTime();
@@ -31,7 +31,7 @@ public class DuckWheelAutoBlue extends LinearOpMode {
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
         OpenCVElementTracker elementTracker = new OpenCVElementTracker(hardwareMap, 50);
 
-        Pose2d loc = new Pose2d(-32, 62, Math.toRadians(180));
+        Pose2d loc = new Pose2d(8, -62, Math.toRadians(0));
         OpenCVElementTracker.LOCATION teamElementLoc;
         do {
             teamElementLoc = elementTracker.getLocation();
@@ -54,18 +54,15 @@ public class DuckWheelAutoBlue extends LinearOpMode {
                 break;
             default:
                 armPosition = Robot.ARM_TOP;
-                hubDropoffOffset = 19.75;
+                hubDropoffOffset = 18.75;
         }
 
         drive.setPoseEstimate(loc);
         Trajectory toShippingHub = drive.trajectoryBuilder(loc)
-                .lineTo(new Vector2d(-16, 24.75 + hubDropoffOffset))
+                .lineTo(new Vector2d(-6, -24.75 - hubDropoffOffset))
                 .build();
-        Trajectory toDuckWheel = drive.trajectoryBuilder(toShippingHub.end())
-                .lineTo(new Vector2d(-50, 58))
-                .build();
-        Trajectory toStorageUnit = drive.trajectoryBuilder(toDuckWheel.end())
-                .lineTo(new Vector2d(-52, 38.25))
+        Trajectory backAway = drive.trajectoryBuilder(toShippingHub.end())
+                .lineTo(new Vector2d(8, -28 - hubDropoffOffset))
                 .build();
 
         robot.setArmPosition(armPosition, ARM_SPEED);
@@ -75,12 +72,13 @@ public class DuckWheelAutoBlue extends LinearOpMode {
         drive.followTrajectory(toShippingHub);
         robot.setClawPosition(Robot.CLAW_OPEN);
         sleep(CLAW_MOVE_MAX_TIME);
+        drive.followTrajectory(backAway);
         robot.setArmPosition(Robot.ARM_BACK, ARM_SPEED); // TODO: Use a time marker to start moving the arm slightly after we move away from the hub
-        drive.followTrajectory(toDuckWheel);
-        drive.turn(Math.toRadians(DUCKWHEEL_ROTATION_OFFSET));
-        robot.spinDuckWheel(DUCKWHEEL_SPIN_SPEED, 3000);
-        drive.turn(Math.toRadians(-DUCKWHEEL_ROTATION_OFFSET));
-        drive.followTrajectory(toStorageUnit);
+        while (robot.armIsBusy()) {}
+//        if (teamElementLoc == OpenCVElementTracker.LOCATION.UNKNOWN) { return; }
+        robot.drive(1, 0, 0, SPRINT_SPEED);
+        sleep(SPRINT_TIME);
+        robot.brake();
     }
 
 }

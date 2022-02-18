@@ -8,11 +8,11 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.util.misc.vision.OpenCVElementTracker;
+import org.firstinspires.ftc.teamcode.util.vision.OpenCVElementTracker;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.util.drive.SampleMecanumDrive;
 
-// TODO: Convert this and DuckWheelAutoRed to a single class that gets subclassed to change positions/rotations
+// TODO: Convert this and DuckWheelAutoBlue to a single class that gets subclassed to change positions/rotations
 
 @Config
 @Autonomous(name = "Duck Wheel Red",group = "drive")
@@ -21,7 +21,6 @@ public class DuckWheelAutoRed extends LinearOpMode {
     public static double ARM_SPEED = 0.45;
     public static double DUCKWHEEL_ROTATION_OFFSET = 5;
     public static double DUCKWHEEL_SPIN_SPEED = -0.35;
-    public static int ARM_MOVE_MAX_TIME = 3000;
     public static int CLAW_MOVE_MAX_TIME = 1500;
 
     ElapsedTime runtime = new ElapsedTime();
@@ -30,7 +29,7 @@ public class DuckWheelAutoRed extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         Robot robot = new Robot(hardwareMap);
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
-        OpenCVElementTracker elementTracker = new OpenCVElementTracker(hardwareMap);
+        OpenCVElementTracker elementTracker = new OpenCVElementTracker(hardwareMap, -50);
 
         Pose2d loc = new Pose2d(-32, -62, Math.toRadians(0));
         OpenCVElementTracker.LOCATION teamElementLoc;
@@ -55,7 +54,7 @@ public class DuckWheelAutoRed extends LinearOpMode {
                 break;
             default:
                 armPosition = Robot.ARM_TOP;
-                hubDropoffOffset = 19.75;
+                hubDropoffOffset = 18.75;
         }
 
         drive.setPoseEstimate(loc);
@@ -70,7 +69,7 @@ public class DuckWheelAutoRed extends LinearOpMode {
                 .build();
 
         robot.setArmPosition(armPosition, ARM_SPEED);
-        while (robot.armIsBusy() && (runtime.milliseconds() < ARM_MOVE_MAX_TIME)) {
+        while (robot.armIsBusy()) {
             if (isStopRequested()) return;
         }
         drive.followTrajectory(toShippingHub);
@@ -80,7 +79,7 @@ public class DuckWheelAutoRed extends LinearOpMode {
         drive.followTrajectory(toDuckWheel);
         drive.turn(Math.toRadians(DUCKWHEEL_ROTATION_OFFSET));
         robot.spinDuckWheel(DUCKWHEEL_SPIN_SPEED, 3000);
-        drive.turn(Math.toRadians(-DUCKWHEEL_ROTATION_OFFSET));
+//        drive.turn(Math.toRadians(-DUCKWHEEL_ROTATION_OFFSET));
         drive.followTrajectory(toStorageUnit);
     }
 
